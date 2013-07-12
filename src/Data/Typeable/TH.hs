@@ -221,7 +221,7 @@ kindOf n = do
     (DataD _ _ tv _ _) -> return $ map tvKind tv
     (NewtypeD _ _ tv _ _) -> return $ map tvKind tv
     _ -> fail "Not a newtype or data type declaration"
-  return $ foldr (\k a -> (chainK a k)) starK ks
+  return $ foldr chainK starK ks
 
   where tvKind (KindedTV _ k) = k
         tvKind (PlainTV _) = starK
@@ -239,7 +239,7 @@ dropEnd n l = zipWith const l (drop n l)
 #if MIN_VERSION_template_haskell(2,8,0)
 -- | Chain two kinds with (->)
 chainK :: Kind -> Kind -> Kind
-chainK a b = AppT (AppT ArrowT b) a
+chainK a b = AppT (AppT ArrowT a) b
 
 #else
 -- | Chain two kinds with (->)
