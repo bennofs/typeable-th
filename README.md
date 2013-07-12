@@ -15,7 +15,7 @@ instances automatically. To use it, you just have to enable a few extensions and
 import Data.Typeable.TH
 ```
 
-And then define your data type and call makeTypeable ''YourDataTypeName:
+And then define your data type and call `makeTypeable ''YourDataTypeName`:
 
 ```haskell
 data Weird a (b :: * -> *) c d = Weird
