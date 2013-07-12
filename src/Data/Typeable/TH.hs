@@ -109,7 +109,7 @@ makeTypeable typeName = bestTypeable `fmap` kindOf typeName >>= makeTypeableN ty
 makeTypeableN :: Name -> Int -> Q [Dec]
 makeTypeableN name n = do
   kind <- kindOf name
-  unless (all (== StarT) $ take n $ reverse $ params kind) $
+  unless (all (== starK) $ take n $ reverse $ params kind) $
     fail $ "Can't generate a Typeable" ++ show (typeableSuffix n)
         ++ " instance for a type of kind "
         ++ pprint kind
@@ -164,7 +164,7 @@ typeableSuffix n = show n
 -- | Calculate the maximum N for which a TypeableN instance is generatable for a given kind. How this works is explained in
 -- the description at the top of this module.
 bestTypeable :: Kind -> Int
-bestTypeable = length . takeWhile (==StarT) . reverse . params
+bestTypeable = length . takeWhile (==starK) . reverse . params
 
 -- | Split a kind into a list of kinds, where each list element is a kind of the parameter of the orginal kind.
 -- The list is ordered, a parameter which comes first comes first in the list too.
