@@ -2,19 +2,30 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                typeable-th
-version:             0.1.0.0
-synopsis:            Automatic deriving of Typeable instances with Template Haskell
--- description:         
+version:             0.1
+synopsis:            Automatic deriving of TypeableN instances with Template Haskell
+description:         This package provides template haskell functions for deriving 
+                     TypeableN instances for types of every kind, selecting the best
+                     N that is possible.
 homepage:            http://github.com/bennofs/typeable-th
+bug-reports:         http://github.com/bennofs/typeable-th/issues
 license:             BSD3
 license-file:        LICENSE
+copyright:           Copyright (C) 2013 Benno Fünfstück
 author:              Benno Fünfstück
 maintainer:          benno.fuenfstueck@gmail.com
--- copyright:           
 category:            Data
 build-type:          Simple
-extra-source-files:  README.md
+extra-source-files:  
+  README.md
+  .ghci
+  .gitignore
+  .travis.yml
 cabal-version:       >=1.10
+
+source-repository head
+  type: git
+  location: git://github.com/bennofs/typeable-th
 
 library
   exposed-modules:     Data.Typeable.TH
