@@ -34,12 +34,6 @@ import           Data.List
 import           Data.Typeable
 import           Language.Haskell.TH
 
-#if !MIN_VERSION_template_haskell(2,8,0)
-#define StarT StarK
-#define ArrowT ArrowK
-#define AppT AppK
-#endif
-
 {- $intro
     This module provides Template Haskell functions that derive TypeableN instances. They are smart
     in that they try define the best possible TypeableN instance, where a higher N is better.
@@ -175,22 +169,36 @@ bestTypeable = length . takeWhile (==StarT) . reverse . params
 -- | Split a kind into a list of kinds, where each list element is a kind of the parameter of the orginal kind.
 -- The list is ordered, a parameter which comes first comes first in the list too.
 params :: Kind -> [Kind]
-params = reverse . drop 1 . reverse . concat . unfoldr (fmap splitKind) . Just
+params = reverse . drop 1 . reverse . unfoldr (fmap splitKind) . Just
 
 -- | Split the part in front of the arrow from a kind, and return the rest (if there is any rest).
 -- Example: splitKind (* -> *) -> * -> * will return ((* -> *),Just * -> *).
 -- This is used to implement 'params'.
-splitKind :: Kind -> ([Kind], Maybe Kind)
-splitKind (AppT (AppT ArrowT x) z) = ([x],Just z)
-splitKind k = ([k], Nothing)
+splitKind :: Kind -> (Kind, Maybe Kind)
+
+#if MIN_VERSION_template_haskell(2,8,0)
+splitKind (AppT (AppT ArrowT x) z) = (x,Just z)
+#else
+splitKind (ArrowK x z) = (x,Just z)
+#endif
+
+splitKind k = (k, Nothing)
 
 -- | Generate a data type with the given kind that has no constructor and return the name of it.
 -- The state is used for generating unqiue names for the data type.
 typeOfKind :: Kind -> StateT Integer Q (Name,[Dec])
+
 -- For some special cases that are needed very often, we can use already existing data types.
+#if MIN_VERSION_template_haskell(2,8,0)
 typeOfKind StarT = return $ (''(),[])
 typeOfKind (AppT (AppT ArrowT StarT) StarT) = return $ (''Maybe,[])
 typeOfKind (AppT (AppT ArrowT StarT) (AppT (AppT ArrowT StarT) StarT)) = return (''Either,[])
+#else
+typeOfKind StarK = return $ (''(),[])
+typeOfKind (ArrowK StarK StarK) = return (''Maybe,[])
+typeOfKind (ArrowK StarK (ArrowK StarK StarK)) = return (''Either,[])
+#endif
+
 -- The general case
 typeOfKind kind = do
   x <- get
@@ -200,8 +208,9 @@ typeOfKind kind = do
   if exists 
     then modify (+1) >> typeOfKind kind
     else fmap ((name,) . pure) $ lift $ mapM kindedTV (params kind) >>= \tvs -> dataD (return []) name tvs [] []
-  where kindedTV StarT = PlainTV <$> newName "p"
-        kindedTV k = (`KindedTV` k) <$> newName "k"
+  where kindedTV k 
+          | k == starK = PlainTV <$> newName "p"
+          | otherwise = (`KindedTV` k) <$> newName "k"
 
 -- | Get the kind of the given newtype or data type. If the given name does not refer to
 -- a newtype or a data type, the function fails with an error message.
@@ -212,10 +221,10 @@ kindOf n = do
     (DataD _ _ tv _ _) -> return $ map tvKind tv
     (NewtypeD _ _ tv _ _) -> return $ map tvKind tv
     _ -> fail "Not a newtype or data type declaration"
-  return $ foldr (\k a -> AppT (AppT ArrowT k) a) StarT ks
+  return $ foldr (\k a -> (chainK a k)) starK ks
 
   where tvKind (KindedTV _ k) = k
-        tvKind (PlainTV _) = StarT
+        tvKind (PlainTV _) = starK
 
 -- | A helper function that makes sure the info is a TyConI, and throws an error otherwise.
 expectTyCon :: String -> Info -> Q Dec
@@ -226,3 +235,18 @@ expectTyCon err _ = fail err
 -- be the fastest.
 dropEnd :: Int -> [a] -> [a]
 dropEnd n l = zipWith const l (drop n l)
+
+#if MIN_VERSION_template_haskell(2,8,0)
+-- | Chain two kinds with (->)
+chainK :: Kind -> Kind -> Kind
+chainK a b = AppT (AppT ArrowT b) a
+
+#else
+-- | Chain two kinds with (->)
+chainK :: Kind -> Kind -> Kind
+chainK = ArrowK
+
+-- | The kind @*@
+starK :: Kind -> Kind -> Kind
+starK = StarK
+#endif
