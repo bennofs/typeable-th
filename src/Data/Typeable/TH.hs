@@ -37,6 +37,7 @@ import           Language.Haskell.TH
 #if !MIN_VERSION_template_haskell(2,8,0)
 #define StarT StarK
 #define ArrowT ArrowK
+#define AppT AppK
 #endif
 
 {- $intro
