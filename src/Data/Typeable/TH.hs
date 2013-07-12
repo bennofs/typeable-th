@@ -247,6 +247,6 @@ chainK :: Kind -> Kind -> Kind
 chainK = ArrowK
 
 -- | The kind @*@
-starK :: Kind -> Kind -> Kind
+starK :: Kind
 starK = StarK
 #endif
