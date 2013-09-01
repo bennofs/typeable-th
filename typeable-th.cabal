@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                typeable-th
-version:             0.1.2
+version:             0.1.3
 synopsis:            Automatic deriving of TypeableN instances with Template Haskell
 description:         This package provides template haskell functions for deriving 
                      TypeableN instances for types of every kind, selecting the best
@@ -41,5 +41,5 @@ test-suite compile-test
   type:                exitcode-stdio-1.0
   build-depends:       base
                      , typeable-th
-  default-language:    Haskell98
+  default-language:    Haskell2010
   

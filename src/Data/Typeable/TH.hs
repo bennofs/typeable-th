@@ -219,7 +219,7 @@ typeOfKind kind = do
   if exists 
     then typeOfKind kind
     else do
-         dec <- lift $ mapM kindedTV (params kind) >>= \tvs -> dataD (return []) name tvs [normalC name []] []
+         dec <- lift $ mapM kindedTV (params kind) >>= \tvs -> dataD (return []) name tvs [] []
          decs <- lift $ makeTypeableWithKind name kind
          return (name, dec : decs)
   where kindedTV k 
