@@ -205,8 +205,9 @@ typeOfKind kind = do
   let name = mkName $ "DeriveTypeableDummy" ++ show x
  -- Check whether there is already a data type with that name
   exists <- lift $ recover (return False) $ (True <$) $ reify name
+  modify (+1)
   if exists 
-    then modify (+1) >> typeOfKind kind
+    then typeOfKind kind
     else fmap ((name,) . pure) $ lift $ mapM kindedTV (params kind) >>= \tvs -> dataD (return []) name tvs [] []
   where kindedTV k 
           | k == starK = PlainTV <$> newName "p"
