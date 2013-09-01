@@ -107,20 +107,30 @@ makeTypeable typeName = bestTypeable `fmap` kindOf typeName >>= makeTypeableN ty
 -- | Derive the given TypeableN instance for a data type. Using N=0 generates a plain Typeable instance. Note that this function may
 -- fail if it's not possible to derive the requested TypeableN instance.
 makeTypeableN :: Name -> Int -> Q [Dec]
-makeTypeableN name n = do
-  kind <- kindOf name
+makeTypeableN name n = kindOf name >>= makeTypeableNWithKind name n 
+
+-- | Derives the best typeable instance for a type with the given kinds. This won't call reify, so it's possible to use it
+-- before the type is in scope.
+makeTypeableWithKind :: Name -> Kind -> Q [Dec]
+makeTypeableWithKind name kind = makeTypeableNWithKind name (bestTypeable kind) kind
+
+-- | This function generates a TypeableN instance with the given N and kind. This won't call reify, so it can be used on types that
+-- aren't in scope when the function is called.
+makeTypeableNWithKind :: Name -> Int -> Kind -> Q [Dec]
+makeTypeableNWithKind name n kind = do
   unless (all (== starK) $ take n $ reverse $ params kind) $
     fail $ "Can't generate a Typeable" ++ show (typeableSuffix n)
         ++ " instance for a type of kind "
         ++ pprint kind
   names <- replicateM (length (params kind) - n) $ newName "p"
-  (body,(decs, cxt)) <- flip evalStateT 0 $ runWriterT $ typeableBody name kind n names
+  (body,(decs, context)) <- flip evalStateT 0 $ runWriterT $ typeableBody name kind n names
   let typ = conT (mkName ("Typeable" ++ typeableSuffix n)) `appT` foldl appT (conT name) (map varT names)
   let funName = mkName $ "typeOf" ++ typeableSuffix n
   
-  fmap (:decs) $ instanceD (return cxt) typ $ [ 
+  fmap (:decs) $ instanceD (return context) typ $ [ 
     funD funName [clause [wildP] (normalB $ return body) []]
    ]
+
 
 -- | Generate the typeOfN function of TypeableN, tell'ing all instance context predicates and declarations we need. We also update
 -- a state to have a counter for generating unique names for data types we declare.
@@ -208,7 +218,10 @@ typeOfKind kind = do
   modify (+1)
   if exists 
     then typeOfKind kind
-    else fmap ((name,) . pure) $ lift $ mapM kindedTV (params kind) >>= \tvs -> dataD (return []) name tvs [] []
+    else do
+         dec <- lift $ mapM kindedTV (params kind) >>= \tvs -> dataD (return []) name tvs [normalC name []] []
+         decs <- lift $ makeTypeableWithKind name kind
+         return (name, dec : decs)
   where kindedTV k 
           | k == starK = PlainTV <$> newName "p"
           | otherwise = (`KindedTV` k) <$> newName "k"
