@@ -2,9 +2,9 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                typeable-th
-version:             0.1.4
+version:             0.1.5
 synopsis:            Automatic deriving of TypeableN instances with Template Haskell
-description:         This package provides template haskell functions for deriving 
+description:         This package provides template haskell functions for deriving
                      TypeableN instances for types of every kind, selecting the best
                      N that is possible.
 homepage:            http://github.com/bennofs/typeable-th
@@ -34,6 +34,7 @@ library
                      , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010
+  other-extensions:    TemplateHaskell
 
 test-suite compile-test
   main-is:             Main.hs
@@ -42,4 +43,4 @@ test-suite compile-test
   build-depends:       base
                      , typeable-th
   default-language:    Haskell2010
-  
+  other-extensions:    TemplateHaskell
